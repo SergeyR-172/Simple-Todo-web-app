@@ -1,0 +1,55 @@
+version: '3.9'
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+    environment:
+      DB_HOST: db
+      DB_NAME: TODOs
+      DB_USER: user
+      DB_PASSWORD: pass
+      DEBUG: True
+      DJANGO_SECRET_KEY: VERY_SECRET_KEY
+      FRONTEND_URL: http://frontend
+    depends_on:
+      - db
+    networks:
+      - app-network
+
+  db:
+    image: postgres:17.6
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      POSTGRES_DB: TODOs
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+    networks:
+      - app-network
+
+volumes:
+  postgres_data:
+
+networks:
+  app-network:
+    driver: bridge
