@@ -1,1 +1,1 @@
-window.API_URL = "http://localhost:8000/api/tasks/";
+window.API_URL = "/api/tasks/";
