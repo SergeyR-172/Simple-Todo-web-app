@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Django Todo App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .django-watermark {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            opacity: 0.1;
+            font-size: 10rem;
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        .task-item {
+            transition: all 0.3s ease;
+        }
+        
+        .task-item:hover {
+            transform: translateX(5px);
+        }
+        
+        .completed {
+            text-decoration: line-through;
+            color: #9ca3af;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-2xl">
+        <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+            <!-- Header -->
+            <div class="bg-green-600 px-6 py-4">
+                <h1 class="text-2xl font-bold text-white">Django Todo List</h1>
+                <p class="text-green-100">Powered by Django backend</p>
+            </div>
+            
+            <!-- Add Task Form -->
+            <div class="px-6 py-4 border-b">
+                <form id="task-form" class="flex gap-2">
+                    <input 
+                        type="text" 
+                        id="task-input" 
+                        placeholder="Add a new task..." 
+                        class="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                        required
+                    >
+                    <button 
+                        type="submit" 
+                        class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors"
+                    >
+                        <i class="fas fa-plus"></i> Add
+                    </button>
+                </form>
+            </div>
+            
+            <!-- Task Filters -->
+            <div class="px-6 py-3 bg-gray-50 flex justify-between text-sm">
+                <span id="task-count" class="text-gray-600">0 tasks</span>
+                <div class="flex gap-2">
+                    <button id="filter-all" class="filter-btn active px-3 py-1 rounded bg-green-100 text-green-800">All</button>
+                    <button id="filter-active" class="filter-btn px-3 py-1 rounded hover:bg-gray-200">Active</button>
+                    <button id="filter-completed" class="filter-btn px-3 py-1 rounded hover:bg-gray-200">Completed</button>
+                </div>
+            </div>
+            
+            <!-- Task List -->
+            <ul id="task-list" class="divide-y">
+                <!-- Tasks will be added here dynamically -->
+            </ul>
+            
+            <!-- Django Watermark -->
+            <div class="django-watermark">
+                <i class="fab fa-python"></i>
+            </div>
+        </div>
+        
+        <!-- Backend Info -->
+        <div class="mt-6 bg-white p-4 rounded-lg shadow text-sm text-gray-600">
+            <h3 class="font-bold text-gray-800 mb-2">Backend API (Django):</h3>
+            <div class="space-y-2">
+                <p><span class="font-mono bg-gray-100 px-2 py-1 rounded">GET /api/tasks/</span> - Get all tasks</p>
+                <p><span class="font-mono bg-gray-100 px-2 py-1 rounded">POST /api/tasks/</span> - Create new task</p>
+                <p><span class="font-mono bg-gray-100 px-2 py-1 rounded">PATCH /api/tasks/{id}/</span> - Update task</p>
+                <p><span class="font-mono bg-gray-100 px-2 py-1 rounded">DELETE /api/tasks/{id}/</span> - Delete task</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="/config.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const API_URL = window.API_URL || 'http://localhost:8000/api/tasks/';
+
+            const taskForm = document.getElementById('task-form');
+            const taskInput = document.getElementById('task-input');
+            const taskList = document.getElementById('task-list');
+            const taskCount = document.getElementById('task-count');
+            const filterAll = document.getElementById('filter-all');
+            const filterActive = document.getElementById('filter-active');
+            const filterCompleted = document.getElementById('filter-completed');
+
+            let tasks = [];
+            let currentFilter = 'all';
+
+            fetchTasks();
+
+            taskForm.addEventListener('submit', createTask);
+            filterAll.addEventListener('click', () => setFilter('all'));
+            filterActive.addEventListener('click', () => setFilter('active'));
+            filterCompleted.addEventListener('click', () => setFilter('completed'));
+
+            function fetchTasks() {
+                fetch(API_URL)
+                    .then(res => {
+                        if (!res.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return res.json();
+                    })
+                    .then(data => {
+                        tasks = data;
+                        renderTasks();
+                        updateTaskCount();
+                    })
+                    .catch(err => {
+                        console.error('Fetch error:', err);
+                        taskList.innerHTML = '<li class="px-6 py-4 text-center text-red-500">Error loading tasks. Make sure Django server is running.</li>';
+                    });
+            }
+
+            function createTask(e) {
+                e.preventDefault();
+                const content = taskInput.value.trim();
+                if (!content) return;
+
+                fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCSRFToken() // Добавьте это если используете CSRF
+                    },
+                    body: JSON.stringify({ content })
+                })
+                    .then(res => {
+                        if (!res.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return res.json();
+                    })
+                    .then(data => {
+                        tasks.push(data);
+                        renderTasks();
+                        updateTaskCount();
+                        taskInput.value = '';
+                    })
+                    .catch(err => console.error('Create error:', err));
+            }
+
+            function deleteTask(id) {
+                fetch(`${API_URL}${id}/`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRFToken': getCSRFToken() // Добавьте это если используете CSRF
+                    }
+                })
+                    .then(res => {
+                        if (!res.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        tasks = tasks.filter(t => t.id !== id);
+                        renderTasks();
+                        updateTaskCount();
+                    })
+                    .catch(err => console.error('Delete error:', err));
+            }
+
+            function toggleComplete(id) {
+                const task = tasks.find(t => t.id === id);
+                if (!task) return;
+
+                fetch(`${API_URL}${id}/`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCSRFToken() // Добавьте это если используете CSRF
+                    },
+                    body: JSON.stringify({ completed: !task.completed })
+                })
+                    .then(res => {
+                        if (!res.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return res.json();
+                    })
+                    .then(updated => {
+                        const index = tasks.findIndex(t => t.id === id);
+                        tasks[index] = updated;
+                        renderTasks();
+                        updateTaskCount();
+                    })
+                    .catch(err => console.error('Update error:', err));
+            }
+
+            function renderTasks() {
+                taskList.innerHTML = '';
+
+                const filtered = tasks.filter(task => {
+                    if (currentFilter === 'all') return true;
+                    if (currentFilter === 'active') return !task.completed;
+                    if (currentFilter === 'completed') return task.completed;
+                    return true;
+                });
+
+                if (filtered.length === 0) {
+                    const empty = document.createElement('li');
+                    empty.className = 'px-6 py-4 text-center text-gray-500';
+                    empty.textContent = currentFilter === 'all'
+                        ? 'No tasks yet. Add one above!'
+                        : `No ${currentFilter} tasks.`;
+                    taskList.appendChild(empty);
+                    return;
+                }
+
+                filtered.forEach(task => {
+                    const li = document.createElement('li');
+                    li.className = `task-item px-6 py-4 flex items-center justify-between ${task.completed ? 'completed' : ''}`;
+                    li.innerHTML = `
+                        <div class="flex items-center">
+                            <input 
+                                type="checkbox" 
+                                ${task.completed ? 'checked' : ''}
+                                class="mr-3 h-5 w-5 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
+                            >
+                            <span>${task.content}</span>
+                        </div>
+                        <button 
+                            class="text-red-500 hover:text-red-700 transition-colors"
+                        >
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    `;
+                    
+                    // Добавляем обработчики событий правильно
+                    const checkbox = li.querySelector('input[type="checkbox"]');
+                    const deleteBtn = li.querySelector('button');
+                    
+                    checkbox.addEventListener('click', () => toggleComplete(task.id));
+                    deleteBtn.addEventListener('click', () => deleteTask(task.id));
+                    
+                    taskList.appendChild(li);
+                });
+            }
+
+            function updateTaskCount() {
+                const total = tasks.length;
+                const completed = tasks.filter(t => t.completed).length;
+                const active = total - completed;
+
+                taskCount.textContent = `${total} tasks (${active} active, ${completed} completed)`;
+            }
+
+            function setFilter(filter) {
+                currentFilter = filter;
+                [filterAll, filterActive, filterCompleted].forEach(btn => {
+                    btn.classList.remove('active', 'bg-green-100', 'text-green-800');
+                    btn.classList.add('hover:bg-gray-200');
+                });
+
+                const activeBtn = document.getElementById(`filter-${filter}`);
+                activeBtn.classList.add('active', 'bg-green-100', 'text-green-800');
+                activeBtn.classList.remove('hover:bg-gray-200');
+
+                renderTasks();
+            }
+
+            // Функция для получения CSRF токена (если нужно)
+            function getCSRFToken() {
+                const cookieValue = document.cookie
+                    .split('; ')
+                    .find(row => row.startsWith('csrftoken='))
+                    ?.split('=')[1];
+                return cookieValue || '';
+            }
+        });
+    </script>
+</body>
+</html>
