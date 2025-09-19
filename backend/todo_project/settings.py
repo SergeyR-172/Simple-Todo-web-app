@@ -11,7 +11,6 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
-import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -21,14 +20,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv("VERY_SECRET_KEY", "VERY_SECRET_KEY")
+SECRET_KEY = 'django-insecure--3&8z15s8&80ptl7e6-m391w-_dqw@d%=rz4wb=cijzgc8wzo2'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = bool(os.getenv("DEBUG", default=1))
+DEBUG = True
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = []
 
 
+# Application definition
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -39,19 +39,11 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'rest_framework',
-    'drf_spectacular',
-    'corsheaders',
 
     'todo_app',
 ]
 
-CORS_ALLOWED_ORIGINS = [
-    os.getenv("FRONTEND_URL", 'http://localhost:5500'),
-    'http://localhost:3000',
-]
-
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -84,24 +76,8 @@ WSGI_APPLICATION = 'todo_project.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DB_ENGINE = os.getenv("DB_ENGINE", "django.db.backends.postgresql")
-DB_NAME = os.getenv("DB_NAME", "TODOs")
-DB_USER = os.getenv("DB_USER", "user")
-DB_PASSWORD = os.getenv("PASSWORD", "pass")
-DB_HOST = os.getenv("DB_HOST", "localhost")
-DB_PORT = os.getenv("PORT", "5432")
-
 DATABASES = {
     'default': {
-        'ENGINE': DB_ENGINE,
-        'NAME': DB_NAME,
-        'USER': DB_USER,
-        'PASSWORD': DB_PASSWORD,
-        'HOST': DB_HOST,
-        'PORT': DB_PORT,
-    },
-
-    'localtesting': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
     }
