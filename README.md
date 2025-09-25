@@ -64,8 +64,8 @@ SimpleTodo/
 1. Убедитесь, что Docker и Docker Compose установлены
 2. Клонируйте репозиторий:
    ```bash
-   git clone https://github.com/SergeyR-172/Simple-Todo-web-app.git
-   cd Simple-Todo-web-app
+   git clone https://github.com/SergeyR-172/Django-Simple-Todo-web-app.git
+   cd Django-Simple-Todo-web-app
    ```
 3. Запустите приложение:
    ```bash
@@ -89,8 +89,8 @@ SimpleTodo/
 
 1. Клонируйте репозиторий:
    ```bash
-   git clone https://github.com/SergeyR-172/Simple-Todo-web-app.git
-   cd Simple-Todo-web-app
+   git clone https://github.com/SergeyR-172/Django-Simple-Todo-web-app.git
+   cd Django-Simple-Todo-web-app
    ```
 
 2. Создайте виртуальное окружение:
