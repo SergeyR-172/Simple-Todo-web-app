@@ -32,7 +32,8 @@ services:
       DJANGO_SECRET_KEY: VERY_SECRET_KEY
       FRONTEND_URL: http://frontend
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     networks:
       - app-network
 
@@ -46,6 +47,11 @@ services:
       POSTGRES_PASSWORD: pass
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d TODOs"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
 volumes:
   postgres_data:
